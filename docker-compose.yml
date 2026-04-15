@@ -3,12 +3,8 @@ services:
     build: .
     ports:
       - "3000:3000"
-    environment:
-      NODE_ENV: production
-      SISLIBRO_SESSION_SECRET: "CAMBIA_ESTA_CLAVE_LARGA"
-      SISLIBRO_ADMIN_EMAIL: "admin@sislibro.edu"
-      SISLIBRO_ADMIN_PASSWORD: "CAMBIA_ESTA_PASSWORD"
-      SISLIBRO_ADMIN_SECURITY_CODE: "CAMBIA_ESTE_CODIGO"
+    env_file:
+      - .env
     volumes:
       - ./libros:/app/libros
       - ./imagenes:/app/imagenes
