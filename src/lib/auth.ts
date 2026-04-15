@@ -2,10 +2,10 @@ import { createHmac, timingSafeEqual } from "crypto";
 
 export const SESSION_COOKIE_NAME = "sislibro_admin_session";
 
-const ADMIN_EMAIL = "admin@sislibro.edu";
-const ADMIN_PASSWORD = "SisLibroAdmin#2026";
-const ADMIN_SECURITY_CODE = "SL-SEC-7291";
-const SESSION_SECRET = "SISLIBRO_PRIVATE_SESSION_SECRET_2026";
+const DEFAULT_ADMIN_EMAIL = "admin@sislibro.edu";
+const DEFAULT_ADMIN_PASSWORD = "SisLibroAdmin#2026";
+const DEFAULT_ADMIN_SECURITY_CODE = "SL-SEC-7291";
+const DEFAULT_SESSION_SECRET = "SISLIBRO_PRIVATE_SESSION_SECRET_2026";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 
 type SessionPayload = {
@@ -21,8 +21,32 @@ function fromBase64Url(text: string): string {
   return Buffer.from(text, "base64url").toString("utf8");
 }
 
+function getAdminEmail(): string {
+  return (process.env.SISLIBRO_ADMIN_EMAIL ?? DEFAULT_ADMIN_EMAIL).trim();
+}
+
+function getAdminPassword(): string {
+  return process.env.SISLIBRO_ADMIN_PASSWORD ?? DEFAULT_ADMIN_PASSWORD;
+}
+
+function getAdminSecurityCode(): string {
+  return process.env.SISLIBRO_ADMIN_SECURITY_CODE ?? DEFAULT_ADMIN_SECURITY_CODE;
+}
+
+function getSessionSecret(): string {
+  const secret = process.env.SISLIBRO_SESSION_SECRET ?? DEFAULT_SESSION_SECRET;
+  if (process.env.NODE_ENV === "production" && secret === DEFAULT_SESSION_SECRET) {
+    throw new Error(
+      "Config faltante: SISLIBRO_SESSION_SECRET debe configurarse en producción.",
+    );
+  }
+  return secret;
+}
+
 function sign(content: string): string {
-  return createHmac("sha256", SESSION_SECRET).update(content).digest("base64url");
+  return createHmac("sha256", getSessionSecret())
+    .update(content)
+    .digest("base64url");
 }
 
 function safeEqual(a: string, b: string): boolean {
@@ -39,10 +63,19 @@ export function validateAdminCredentials(
   password: string,
   securityCode: string,
 ): boolean {
+  if (process.env.NODE_ENV === "production") {
+    const emailEnv = process.env.SISLIBRO_ADMIN_EMAIL;
+    const passEnv = process.env.SISLIBRO_ADMIN_PASSWORD;
+    const codeEnv = process.env.SISLIBRO_ADMIN_SECURITY_CODE;
+    if (!emailEnv || !passEnv || !codeEnv) {
+      return false;
+    }
+  }
+
   return (
-    safeEqual(email.trim().toLowerCase(), ADMIN_EMAIL.toLowerCase()) &&
-    safeEqual(password, ADMIN_PASSWORD) &&
-    safeEqual(securityCode, ADMIN_SECURITY_CODE)
+    safeEqual(email.trim().toLowerCase(), getAdminEmail().toLowerCase()) &&
+    safeEqual(password, getAdminPassword()) &&
+    safeEqual(securityCode, getAdminSecurityCode())
   );
 }
 
