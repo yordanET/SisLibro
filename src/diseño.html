@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nova Books</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&amp;family=Questrial&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; margin: 0; }
+    * { box-sizing: border-box; }
+
+    .font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+    .font-body { font-family: 'Questrial', sans-serif; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .anim-fade-up { animation: fadeUp 0.7s ease both; }
+    .anim-fade-in { animation: fadeIn 0.6s ease both; }
+    .anim-slide-in { animation: slideIn 0.5s ease both; }
+
+    .book-card {
+      transition: transform 0.4s cubic-bezier(.22,.68,0,1.1), box-shadow 0.4s ease;
+    }
+    .book-card:hover {
+      transform: translateY(-8px) scale(1.02);
+    }
+    .book-cover {
+      transition: transform 0.5s cubic-bezier(.22,.68,0,1.1);
+    }
+    .book-card:hover .book-cover {
+      transform: scale(1.06);
+    }
+
+    .category-pill {
+      transition: all 0.3s ease;
+    }
+    .category-pill:hover, .category-pill.active {
+      transform: translateY(-2px);
+    }
+
+    .nav-link { position: relative; }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0;
+      width: 0; height: 1.5px;
+      transition: width 0.3s ease;
+    }
+    .nav-link:hover::after { width: 100%; }
+
+    .modal-overlay {
+      transition: opacity 0.3s ease;
+    }
+    .modal-content {
+      transition: transform 0.4s cubic-bezier(.22,.68,0,1.1), opacity 0.3s ease;
+    }
+
+    .star-rating i { transition: transform 0.2s ease; }
+    .star-rating i:hover { transform: scale(1.25); }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { border-radius: 3px; }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div id="app" class="w-full h-full overflow-auto" style="background:#F7F5F0;"><!-- Nav -->
+   <nav id="nav" class="w-full sticky top-0 z-50 anim-fade-in" style="background:rgba(247,245,240,0.92);backdrop-filter:blur(12px);border-bottom:1px solid #E2DDD4;">
+    <div class="w-full px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
+     <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+      <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#2C3539;"><i data-lucide="book-open" style="width:16px;height:16px;color:#F7F5F0;"></i>
+      </div><span id="brandTitle" class="font-display text-lg sm:text-2xl font-bold tracking-tight hidden sm:inline" style="color:#2C3539;">Nova</span>
+     </div>
+     <div class="hidden lg:flex items-center gap-6 sm:gap-8 font-body text-xs sm:text-sm" style="color:#6B635A;"><a href="#" class="nav-link" onclick="return false;">Inicio</a> <a href="#" class="nav-link" onclick="return false;">Biblioteca</a> <a href="#" class="nav-link" onclick="return false;">Favoritos</a>
+     </div>
+     <div class="relative flex-1 min-w-0 sm:flex-none sm:w-auto"><input id="searchInput" type="text" placeholder="Buscar..." class="font-body text-xs sm:text-sm pl-8 sm:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 rounded-full border outline-none focus:ring-2 w-full sm:w-44 focus:sm:w-56 transition-all" style="background:#EFECE5;border-color:#DDD7CC;color:#2C3539;" oninput="handleSearch(this.value)"> <i data-lucide="search" style="width:14px;height:14px;color:#8B7D6B;" class="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 flex-shrink-0"></i>
+     </div>
+    </div>
+   </nav><!-- Hero -->
+   <header class="w-full max-w-6xl mx-auto px-6 pt-16 pb-12">
+    <div class="anim-fade-up">
+     <p class="font-body text-xs tracking-[0.25em] uppercase mb-4" style="color:#8B7D6B;">Sistema de biblioteca</p>
+     <h1 id="heroHeading" class="font-display text-5xl md:text-6xl font-bold leading-tight mb-4" style="color:#2C3539;">Descubre tu próxima lectura</h1>
+     <p id="heroSubtext" class="font-body text-lg max-w-lg" style="color:#8B7D6B;">Colecciones curadas para el lector exigente</p>
+    </div>
+   </header><!-- Categories -->
+   <section class="w-full max-w-6xl mx-auto px-6 mb-10 anim-fade-up" style="animation-delay:0.15s;">
+    <div id="categoryBar" class="flex gap-3 flex-wrap"></div>
+   </section><!-- Books Grid -->
+   <section class="w-full max-w-6xl mx-auto px-6 pb-20">
+    <div id="booksGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7"></div>
+    <p id="emptyState" class="hidden font-body text-center py-20" style="color:#8B7D6B;">No hay libros que coincidan con tu búsqueda.</p>
+   </section><!-- Detail Modal -->
+   <div id="modal" class="fixed inset-0 z-[100] hidden" onclick="closeModal(event)">
+    <div class="modal-overlay absolute inset-0" style="background:rgba(44,53,57,0.45);backdrop-filter:blur(4px);"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+     <div class="modal-content relative w-full max-w-xl sm:max-w-2xl max-h-[90%] overflow-auto rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-8 md:p-10" style="background:#F7F5F0;" onclick="event.stopPropagation()"><button onclick="closeModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition-colors" style="background:#EFECE5;color:#6B635A;" onmouseover="this.style.background='#E2DDD4'" onmouseout="this.style.background='#EFECE5'"> <i data-lucide="x" style="width:18px;height:18px;"></i> </button>
+      <div id="modalBody"></div>
+     </div>
+    </div>
+   </div><!-- Footer -->
+   <footer class="w-full border-t py-8 px-6" style="border-color:#E2DDD4;">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+     <p class="font-body text-xs" style="color:#8B7D6B;">© 2025 Nova. All rights reserved.</p>
+     <div class="flex gap-5"><i data-lucide="github" style="width:16px;height:16px;color:#8B7D6B;cursor:pointer;"></i> <i data-lucide="twitter" style="width:16px;height:16px;color:#8B7D6B;cursor:pointer;"></i> <i data-lucide="mail" style="width:16px;height:16px;color:#8B7D6B;cursor:pointer;"></i>
+     </div>
+    </div>
+   </footer>
+  </div>
+  <script>
+const books = [
+  { id:1, title:"The Autumn Cipher", author:"Elena Marchetti", category:"Fiction", year:2023, rating:4.7, pages:342, desc:"A mesmerizing tale of codes hidden within Renaissance paintings, weaving together art history and espionage in Florence.", color:"#C4A77D" },
+  { id:2, title:"Meditations on Stillness", author:"Hiro Tanaka", category:"Philosophy", year:2022, rating:4.9, pages:198, desc:"An exploration of quietude in a noisy world, drawing from Zen traditions and modern neuroscience.", color:"#7D9B8F" },
+  { id:3, title:"Quantum Gardens", author:"Priya Sharma", category:"Science", year:2024, rating:4.5, pages:410, desc:"How quantum biology is reshaping our understanding of plant intelligence and the living world.", color:"#8B7DA0" },
+  { id:4, title:"Letters from Nowhere", author:"Isabelle Fontaine", category:"Fiction", year:2021, rating:4.8, pages:276, desc:"Epistolary fiction at its finest—letters exchanged between strangers reveal extraordinary lives.", color:"#A07D6B" },
+  { id:5, title:"The Ethics of Memory", author:"David Okonkwo", category:"Philosophy", year:2023, rating:4.6, pages:224, desc:"Should we have the right to forget? A profound inquiry into memory, identity, and moral responsibility.", color:"#6B8B8D" },
+  { id:6, title:"Deep Time", author:"Clara Vestergaard", category:"Science", year:2024, rating:4.4, pages:388, desc:"A journey through Earth's geological epochs, revealing patterns that could predict our future.", color:"#8D7D6B" },
+];
+
+const categories = ['All', ...new Set(books.map(b => b.category))];
+let activeCategory = 'all';
+let searchQuery = '';
+
+function renderCategories() {
+  // Categorías ocultas
+}
+
+function handleSearch(val) {
+  searchQuery = val.toLowerCase();
+  renderBooks();
+}
+
+function getFiltered() {
+  return books.filter(b => {
+    const catMatch = activeCategory === 'all' || b.category.toLowerCase() === activeCategory;
+    const searchMatch = !searchQuery || b.title.toLowerCase().includes(searchQuery) || b.author.toLowerCase().includes(searchQuery);
+    return catMatch && searchMatch;
+  });
+}
+
+function starsHTML(rating) {
+  const full = Math.floor(rating);
+  let s = '';
+  for (let i = 0; i < 5; i++) {
+    s += `<i data-lucide="star" style="width:14px;height:14px;${i < full ? 'fill:#C4A77D;color:#C4A77D;' : 'color:#DDD7CC;'}"></i>`;
+  }
+  return s;
+}
+
+function renderBooks() {
+  const grid = document.getElementById('booksGrid');
+  const filtered = getFiltered();
+  const empty = document.getElementById('emptyState');
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  grid.innerHTML = filtered.map((b, i) => `
+    <div class="book-card rounded-2xl overflow-hidden cursor-pointer anim-fade-up" style="background:#FFFFFF;box-shadow:0 2px 16px rgba(44,53,57,0.06);animation-delay:${i*0.08}s;" onclick="openModal(${b.id})">
+      <div class="relative overflow-hidden" style="height:220px;background:${b.color};">
+        <div class="book-cover absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background:rgba(255,255,255,0.2);">
+            <i data-lucide="book-open" style="width:22px;height:22px;color:rgba(255,255,255,0.9);"></i>
+          </div>
+          <span class="font-display text-xl font-semibold" style="color:rgba(255,255,255,0.95);">${b.title}</span>
+        </div>
+        <div class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-body" style="background:rgba(255,255,255,0.22);color:rgba(255,255,255,0.9);">${b.category}</div>
+      </div>
+      <div class="p-5">
+        <h3 class="font-display text-xl font-semibold mb-1" style="color:#2C3539;">${b.title}</h3>
+        <p class="font-body text-sm mb-3" style="color:#8B7D6B;">${b.author} · ${b.year}</p>
+        <div class="flex items-center justify-between">
+          <div class="star-rating flex gap-0.5">${starsHTML(b.rating)}</div>
+          <span class="font-body text-xs" style="color:#A09888;">${b.pages} pages</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+function openModal(id) {
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  const modal = document.getElementById('modal');
+  document.getElementById('modalBody').innerHTML = `
+    <div class="flex flex-col sm:flex-row gap-4 sm:gap-8">
+      <div class="flex-shrink-0 w-full sm:w-40 md:w-48 h-48 sm:h-56 md:h-64 rounded-lg sm:rounded-xl flex flex-col items-center justify-center" style="background:${b.color};">
+        <i data-lucide="book-open" style="width:32px;height:32px;color:rgba(255,255,255,0.85);margin-bottom:8px;"></i>
+        <span class="font-display text-base sm:text-lg font-semibold text-center px-3 sm:px-4" style="color:rgba(255,255,255,0.95);">${b.title}</span>
+      </div>
+      <div class="flex-1">
+        <span class="font-body text-xs tracking-[0.2em] uppercase" style="color:#8B7D6B;">${b.category}</span>
+        <h2 class="font-display text-2xl sm:text-3xl font-bold mt-1 mb-1" style="color:#2C3539;">${b.title}</h2>
+        <p class="font-body text-sm mb-3 sm:mb-4" style="color:#8B7D6B;">by ${b.author} · ${b.year}</p>
+        <div class="flex items-center gap-3 mb-4 sm:mb-5">
+          <div class="star-rating flex gap-0.5">${starsHTML(b.rating)}</div>
+          <span class="font-body text-sm font-medium" style="color:#2C3539;">${b.rating}</span>
+          <span class="font-body text-xs" style="color:#A09888;">· ${b.pages} pages</span>
+        </div>
+        <p class="font-body text-sm leading-relaxed mb-5 sm:mb-6" style="color:#6B635A;">${b.desc}</p>
+        <div class="flex flex-col xs:flex-row gap-2 sm:gap-3">
+          <button class="font-body text-sm px-4 sm:px-6 py-2 sm:py-2.5 rounded-full transition-all order-2 xs:order-1" style="background:#2C3539;color:#F7F5F0;" onmouseover="this.style.background='#3D4A4F'" onmouseout="this.style.background='#2C3539'">
+            <span class="flex items-center justify-center gap-2"><i data-lucide="bookmark" style="width:14px;height:14px;"></i> Guardar</span>
+          </button>
+          <button class="font-body text-sm px-4 sm:px-6 py-2 sm:py-2.5 rounded-full border transition-all order-1 xs:order-2" style="background:transparent;color:#6B635A;border-color:#DDD7CC;" onmouseover="this.style.background='#EFECE5'" onmouseout="this.style.background='transparent'">
+            <span class="flex items-center justify-center gap-2"><i data-lucide="share-2" style="width:14px;height:14px;"></i> Compartir</span>
+          </button>
+        </div>
+      </div>
+    </div>`;
+  modal.classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeModal(e) {
+  if (e && e.target && e.target !== e.currentTarget) return;
+  document.getElementById('modal').classList.add('hidden');
+}
+
+// Config
+const defaultConfig = {
+  background_color: '#F7F5F0',
+  surface_color: '#FFFFFF',
+  text_color: '#2C3539',
+  primary_action_color: '#2C3539',
+  secondary_action_color: '#8B7D6B',
+  font_family: 'Cormorant Garamond',
+  font_size: 16,
+  brand_title: 'Nova',
+  hero_heading: 'Descubre tu próxima lectura',
+  hero_subtext: 'Colecciones curadas para el lector exigente'
+};
+
+async function onConfigChange(config) {
+  const bg = config.background_color || defaultConfig.background_color;
+  const surface = config.surface_color || defaultConfig.surface_color;
+  const text = config.text_color || defaultConfig.text_color;
+  const primary = config.primary_action_color || defaultConfig.primary_action_color;
+  const secondary = config.secondary_action_color || defaultConfig.secondary_action_color;
+  const ff = config.font_family || defaultConfig.font_family;
+  const fs = config.font_size || defaultConfig.font_size;
+
+  document.getElementById('app').style.background = bg;
+  document.getElementById('brandTitle').textContent = config.brand_title || defaultConfig.brand_title;
+  document.getElementById('brandTitle').style.color = text;
+  document.getElementById('heroHeading').textContent = config.hero_heading || defaultConfig.hero_heading;
+  document.getElementById('heroHeading').style.color = text;
+  document.getElementById('heroSubtext').textContent = config.hero_subtext || defaultConfig.hero_subtext;
+  document.getElementById('heroSubtext').style.color = secondary;
+
+  document.getElementById('heroHeading').style.fontFamily = `${ff}, Georgia, serif`;
+  document.getElementById('brandTitle').style.fontFamily = `${ff}, Georgia, serif`;
+  document.getElementById('heroHeading').style.fontSize = `${fs * 3}px`;
+  document.getElementById('heroSubtext').style.fontSize = `${fs * 1.1}px`;
+}
+
+function mapToCapabilities(config) {
+  function makeColor(key) {
+    return {
+      get: () => config[key] || defaultConfig[key],
+      set: (v) => { config[key] = v; window.elementSdk.setConfig({ [key]: v }); }
+    };
+  }
+  return {
+    recolorables: [
+      makeColor('background_color'),
+      makeColor('surface_color'),
+      makeColor('text_color'),
+      makeColor('primary_action_color'),
+      makeColor('secondary_action_color')
+    ],
+    borderables: [],
+    fontEditable: {
+      get: () => config.font_family || defaultConfig.font_family,
+      set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+    },
+    fontSizeable: {
+      get: () => config.font_size || defaultConfig.font_size,
+      set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+    }
+  };
+}
+
+function mapToEditPanelValues(config) {
+  return new Map([
+    ['brand_title', config.brand_title || defaultConfig.brand_title],
+    ['hero_heading', config.hero_heading || defaultConfig.hero_heading],
+    ['hero_subtext', config.hero_subtext || defaultConfig.hero_subtext]
+  ]);
+}
+
+window.elementSdk.init({ defaultConfig, onConfigChange, mapToCapabilities, mapToEditPanelValues });
+
+// Init
+renderCategories();
+renderBooks();
+lucide.createIcons();
+
+// Nav link underline color
+document.querySelectorAll('.nav-link').forEach(el => {
+  el.style.setProperty('--ul-color', '#8B7D6B');
+  el.querySelector('::after') || (el.style.cssText += '');
+});
+const style = document.createElement('style');
+style.textContent = '.nav-link::after{background:#8B7D6B;}';
+document.head.appendChild(style);
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ecdb83455aab53c',t:'MTc3NjI4NTE0Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
